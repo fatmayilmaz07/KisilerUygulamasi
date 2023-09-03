@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity(),SearchView.OnQueryTextListener {
 
         kisilerListe = ArrayList()
 
-        adapter = KisilerAdapter(this,kisilerListe)
+        adapter = KisilerAdapter(this,kisilerListe,refKisiler)
         binding.rv.adapter = adapter
 
         tumKisiler()
@@ -74,6 +74,10 @@ class MainActivity : AppCompatActivity(),SearchView.OnQueryTextListener {
             val kisiAd = editTextAd.text.toString().trim()
             val kisiTel = editTextTel.text.toString().trim()
 
+            val kisi = Kisiler("",kisiAd,kisiTel)
+
+            refKisiler.push().setValue(kisi)
+
             Toast.makeText(applicationContext,"$kisiAd - $kisiTel",Toast.LENGTH_SHORT).show()
         }
         ad.setNegativeButton("İptal"){dialogInterface, i ->
@@ -81,12 +85,14 @@ class MainActivity : AppCompatActivity(),SearchView.OnQueryTextListener {
         ad.create().show()
     }
 
-    override fun onQueryTextSubmit(query: String?): Boolean {
+    override fun onQueryTextSubmit(query: String): Boolean {
+        aramaYap(query)
         Log.e("Gönderilen arama",query.toString())
         return true
     }
 
-    override fun onQueryTextChange(newText: String?): Boolean {
+    override fun onQueryTextChange(newText: String): Boolean {
+        aramaYap(newText)
         Log.e("Harf girdikçe",newText.toString())
         return true
     }
@@ -114,4 +120,31 @@ class MainActivity : AppCompatActivity(),SearchView.OnQueryTextListener {
 
         })
     }
+
+    fun aramaYap(aramaKelime:String){
+        refKisiler.addValueEventListener(object : ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                kisilerListe.clear()
+
+                for (c in snapshot.children){
+                    val kisi = c.getValue(Kisiler::class.java)
+
+                    if (kisi != null){
+                        if (kisi.kisi_ad!!.contains(aramaKelime)){
+                            kisi.kisi_id = c.key
+                            kisilerListe.add(kisi)
+                        }
+                    }
+                }
+
+                adapter.notifyDataSetChanged()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                TODO("Not yet implemented")
+            }
+
+        })
+    }
+
 }
